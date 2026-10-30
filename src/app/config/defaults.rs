@@ -1,7 +1,9 @@
 use crate::app_meta::CONFIG_DIR_NAME;
 
 pub const CONFIG_FILE_NAME: &str = "config.json";
-pub const MAX_LOUDNESS_BOOST_DB: f64 = 150.0;
+// Keep the gain conversion in f32 finite: 10^(770 / 20) is below f32::MAX.
+// This replaces the old arbitrary 150 dB cap while guarding against overflow.
+pub const MAX_LOUDNESS_BOOST_DB: f64 = 770.0;
 
 pub fn config_dir_name() -> &'static str {
     CONFIG_DIR_NAME
@@ -45,10 +47,29 @@ pub fn normalize_loudness_boost_db(value: f64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use super::default_allow_multiple_playbacks;
+    use super::{
+        default_allow_multiple_playbacks, normalize_loudness_boost_db,
+        MAX_LOUDNESS_BOOST_DB,
+    };
 
     #[test]
     fn multiple_playbacks_are_disabled_by_default() {
         assert!(!default_allow_multiple_playbacks());
+    }
+
+    #[test]
+    fn loudness_boost_accepts_values_above_the_old_limit() {
+        assert_eq!(normalize_loudness_boost_db(200.0), 200.0);
+        assert_eq!(normalize_loudness_boost_db(MAX_LOUDNESS_BOOST_DB), 770.0);
+    }
+
+    #[test]
+    fn loudness_boost_stays_within_finite_gain_range() {
+        assert_eq!(
+            normalize_loudness_boost_db(f64::MAX),
+            MAX_LOUDNESS_BOOST_DB
+        );
+        assert_eq!(normalize_loudness_boost_db(f64::INFINITY), 0.0);
+        assert_eq!(normalize_loudness_boost_db(f64::NAN), 0.0);
     }
 }

@@ -169,7 +169,7 @@ pub(super) fn build_playback_groups(
 
         let boost_row = adw::SpinRow::with_range(0.0, crate::config::MAX_LOUDNESS_BOOST_DB, 1.0);
         boost_row.set_title("Boost (dB)");
-        boost_row.set_subtitle("Extreme values hard-clip and heavily distort audio");
+        boost_row.set_subtitle("Very high values can hard-clip and distort audio");
         boost_row.set_value(loudness_boost_db);
         {
             let state2 = Arc::clone(&state);
